@@ -2,14 +2,13 @@
 
 ## 1. Overview
 
-This document describes the requirements for a **Node Simulation Application** implemented in **Python**.  
-The application manages a group of **nodes** that:
+This document describes the requirements for a **Node Simulation Application** implemented in **Python** with a small **visual interface**. The application manages a group of **nodes** that:
 
 - May be connected to other nodes (one or many).
 - May exist as standalone (no connections).
 - Support **multidirectional navigation** (i.e., you can traverse from a node to any of its connected neighbors in any direction).
 
-The goal is to provide a flexible foundation for building simulations, visualizers, or tools that operate on graph-like structures.
+The goal is to provide a flexible foundation for building simulations, visualizers, or tools that operate on graph-like structures while also shipping a minimal runnable demo UI.
 
 ---
 
@@ -26,7 +25,8 @@ The goal is to provide a flexible foundation for building simulations, visualize
    - Add nodes to a group.
    - Connect and disconnect nodes.
    - Traverse from any node to any directly or indirectly connected node.
-5. Ensure the architecture is modular and testable.
+5. Provide a **lightweight visual explorer** so users can see nodes, edges, and a sample traversal.
+6. Ensure the architecture is modular and testable.
 
 ---
 
@@ -117,7 +117,7 @@ Each **Node** represents an entity in the simulation.
 
 - **Update Node Metadata**
   - Modify metadata attributes without changing the node ID.
-  
+
 - **Delete Node**
   - Remove node from `NodeGroup`.
   - Remove all associated connections.
@@ -164,6 +164,14 @@ Each **Node** represents an entity in the simulation.
 - **Connected Components**
   - Return all connected subgroups (each set of nodes reachable from one another).
 
+### 5.4 Visualization & Interaction
+
+- Provide a runnable **visual demo** that:
+  - Renders nodes and connections on a 2D canvas.
+  - Allows adding nodes and connections via simple inputs.
+  - Shows standout features like standalone nodes and a sample path/highlight between two nodes.
+- The visual layer should be optional for library users (i.e., the core API works without a GUI) but easy to launch for demonstration (`python app.py`).
+
 ---
 
 ## 6. Non-Functional Requirements
@@ -181,6 +189,7 @@ Each **Node** represents an entity in the simulation.
 - Organize code into modules:
   - `nodes.py` – Node and NodeGroup classes.
   - `traversal.py` – Optional traversal and pathfinding utilities.
+  - `app.py` – Visual demo.
   - `tests/` – Unit tests.
 
 ### 6.3 Testability
@@ -218,3 +227,11 @@ neighbors_of_b = group.get_neighbors("B")  # -> {"A", "C"}
 path_a_to_c = group.find_path("A", "C")    # -> ["A", "B", "C"]
 
 standalone_nodes = group.get_standalone_nodes()  # -> {"D"}
+```
+
+### 7.2 Visual Demo (Conceptual)
+
+- Run `python app.py` to launch a simple window that:
+  - Shows current nodes and edges.
+  - Offers controls to add nodes, connect them, and highlight a path between two nodes.
+- The demo should be small enough to run without extra dependencies beyond the standard library.
