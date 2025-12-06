@@ -15,16 +15,10 @@ def compute_radial_position(
     center: Tuple[int, int] = (360, 260),
     radius: int = 200,
 ) -> Tuple[int, int]:
-    """Compute a visually distinct position for a node.
+    """Compute a visually distinct position for a node on a single ring.
 
-    Args:
-        index: Zero-based position of the node being placed.
-        total: Total number of nodes to position in the view.
-        center: Canvas center point.
-        radius: Distance from the center for ring placements.
-
-    Returns:
-        Tuple of ``(x, y)`` coordinates.
+    Kept for backwards compatibility in tests; use ``compute_radial_layout``
+    for a multi-ring, dynamically spaced layout.
     """
 
     if total <= 0:
@@ -43,25 +37,56 @@ def compute_radial_position(
     return x, y
 
 
+def _positions_on_ring(count: int, radius: int, center: Tuple[int, int]) -> List[Tuple[int, int]]:
+    """Return evenly spaced coordinates around a ring."""
+
+    if count <= 0:
+        return []
+
+    center_x, center_y = center
+    return [
+        (
+            center_x + int(radius * math.cos(2 * math.pi * i / count)),
+            center_y + int(radius * math.sin(2 * math.pi * i / count)),
+        )
+        for i in range(count)
+    ]
+
+
 def compute_radial_layout(
     node_ids: List[str],
     *,
     center: Tuple[int, int] = (360, 260),
-    radius: int = 200,
+    min_radius: int = 80,
+    ring_step: int = 80,
+    min_spacing: int = 70,
 ) -> Dict[str, Tuple[int, int]]:
-    """Return a full layout mapping for the provided nodes.
+    """Return a dynamically spaced layout mapping for the provided nodes.
 
-    This recalculates positions for all nodes whenever the total changes so that
-    spacing is updated as the graph grows.
+    Nodes are distributed across concentric rings with a minimum spacing target
+    so they remain readable even as the total grows beyond a single ring's
+    capacity.
     """
 
-    total = len(node_ids)
-    return {
-        node_id: compute_radial_position(
-            index=index, total=total, center=center, radius=radius
-        )
-        for index, node_id in enumerate(node_ids)
-    }
+    if not node_ids:
+        return {}
+
+    positions: Dict[str, Tuple[int, int]] = {node_ids[0]: center}
+    remaining = node_ids[1:]
+
+    radius = min_radius
+    idx = 0
+    while idx < len(remaining):
+        capacity = max(1, int(2 * math.pi * radius // min_spacing))
+        take = min(capacity, len(remaining) - idx)
+        ring_positions = _positions_on_ring(take, radius, center)
+        for offset in range(take):
+            node_id = remaining[idx + offset]
+            positions[node_id] = ring_positions[offset]
+        idx += take
+        radius += ring_step
+
+    return positions
 
 
 class NodeSimulatorApp:
