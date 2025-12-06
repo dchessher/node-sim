@@ -6,7 +6,7 @@ def test_positions_do_not_overlap_for_first_three_nodes():
     positions = [compute_radial_position(i, total) for i in range(total)]
     assert len(set(positions)) == total
     # First node stays in the center
-    assert positions[0] == (360, 260)
+    assert positions[0] == (600, 390)
 
 
 def test_position_validation():
@@ -52,7 +52,7 @@ def test_layout_rescales_as_nodes_grow():
         for j in range(i + 1, len(positions))
     )
 
-    assert min_distance > 40, "Nodes should remain spaced apart as total grows"
+    assert min_distance > 60, "Nodes should remain spaced apart as total grows"
 
 
 def test_large_layout_adds_rings_instead_of_stacking():
@@ -73,7 +73,7 @@ def test_large_layout_adds_rings_instead_of_stacking():
         for j in range(i + 1, len(positions))
     )
 
-    assert min_distance > 45, "Even large layouts should avoid tight stacking"
+    assert min_distance > 70, "Even large layouts should avoid tight stacking"
 
     radii = {int(distance(pos, layout[node_ids[0]])) for pos in positions}
     assert len(radii) > 2, "Additional rings should be used as nodes grow"

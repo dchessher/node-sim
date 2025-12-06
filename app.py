@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import tkinter as tk
+from tkinter import ttk
 from typing import Dict, List, Tuple
 
 from nodes import NodeGroup
@@ -12,8 +13,8 @@ def compute_radial_position(
     index: int,
     total: int,
     *,
-    center: Tuple[int, int] = (360, 260),
-    radius: int = 200,
+    center: Tuple[int, int] = (600, 390),
+    radius: int = 240,
 ) -> Tuple[int, int]:
     """Compute a visually distinct position for a node on a single ring.
 
@@ -56,10 +57,10 @@ def _positions_on_ring(count: int, radius: int, center: Tuple[int, int]) -> List
 def compute_radial_layout(
     node_ids: List[str],
     *,
-    center: Tuple[int, int] = (360, 260),
-    min_radius: int = 80,
-    ring_step: int = 80,
-    min_spacing: int = 70,
+    center: Tuple[int, int] = (600, 390),
+    min_radius: int = 120,
+    ring_step: int = 110,
+    min_spacing: int = 80,
 ) -> Dict[str, Tuple[int, int]]:
     """Return a dynamically spaced layout mapping for the provided nodes.
 
@@ -95,36 +96,66 @@ class NodeSimulatorApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Node Simulation Demo")
+        self.root.minsize(1280, 940)
+
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("TButton", padding=(10, 6))
+        style.configure("TLabel", padding=(4, 2))
+
         self.group = NodeGroup()
         self.positions: Dict[str, Tuple[int, int]] = {}
         self.highlight_path: List[str] = []
 
-        self.canvas = tk.Canvas(root, width=720, height=520, bg="white")
-        self.canvas.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+        main = ttk.Frame(root, padding=16)
+        main.grid(row=0, column=0, sticky="nsew")
+        root.columnconfigure(0, weight=1)
+        root.rowconfigure(0, weight=1)
+        main.columnconfigure(0, weight=3)
+        main.columnconfigure(1, weight=1)
+        main.rowconfigure(0, weight=1)
 
-        tk.Label(root, text="Add Node ID:").grid(row=1, column=0, sticky="e")
-        self.node_entry = tk.Entry(root)
-        self.node_entry.grid(row=1, column=1, sticky="w")
-        tk.Button(root, text="Add Node", command=self.add_node).grid(row=1, column=2, padx=5, pady=5)
+        self.canvas_width = 1200
+        self.canvas_height = 780
+        self.canvas_center = (self.canvas_width // 2, self.canvas_height // 2)
+        self.canvas = tk.Canvas(main, width=self.canvas_width, height=self.canvas_height, bg="#fdfdfd", highlightthickness=0)
+        self.canvas.grid(row=0, column=0, sticky="nsew", padx=(0, 14))
 
-        tk.Label(root, text="Connect A:").grid(row=2, column=0, sticky="e")
-        self.connect_a = tk.Entry(root, width=8)
-        self.connect_a.grid(row=2, column=1, sticky="w")
-        tk.Label(root, text="B:").grid(row=2, column=1)
-        self.connect_b = tk.Entry(root, width=8)
-        self.connect_b.grid(row=2, column=2, sticky="w")
-        tk.Button(root, text="Connect", command=self.connect_nodes).grid(row=2, column=3, padx=5)
+        controls = ttk.Frame(main)
+        controls.grid(row=0, column=1, sticky="nsew")
+        controls.columnconfigure(1, weight=1)
 
-        tk.Label(root, text="Path from:").grid(row=3, column=0, sticky="e")
-        self.path_start = tk.Entry(root, width=8)
-        self.path_start.grid(row=3, column=1, sticky="w")
-        tk.Label(root, text="to:").grid(row=3, column=1)
-        self.path_end = tk.Entry(root, width=8)
-        self.path_end.grid(row=3, column=2, sticky="w")
-        tk.Button(root, text="Highlight Path", command=self.find_and_highlight_path).grid(row=3, column=3, padx=5, pady=5)
+        header = ttk.Label(controls, text="Node Controls", font=("Segoe UI", 12, "bold"))
+        header.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 6))
+
+        ttk.Label(controls, text="Add Node ID:").grid(row=1, column=0, sticky="w")
+        self.node_entry = ttk.Entry(controls)
+        self.node_entry.grid(row=1, column=1, sticky="ew", pady=(0, 6))
+        ttk.Button(controls, text="Add Node", command=self.add_node).grid(row=2, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        separator1 = ttk.Separator(controls, orient="horizontal")
+        separator1.grid(row=3, column=0, columnspan=2, sticky="ew", pady=8)
+
+        ttk.Label(controls, text="Connect Nodes:").grid(row=4, column=0, columnspan=2, sticky="w")
+        self.connect_a = ttk.Entry(controls)
+        self.connect_a.grid(row=5, column=0, sticky="ew", pady=(0, 4))
+        self.connect_b = ttk.Entry(controls)
+        self.connect_b.grid(row=5, column=1, sticky="ew", pady=(0, 4))
+        ttk.Button(controls, text="Connect", command=self.connect_nodes).grid(row=6, column=0, columnspan=2, sticky="ew")
+
+        separator2 = ttk.Separator(controls, orient="horizontal")
+        separator2.grid(row=7, column=0, columnspan=2, sticky="ew", pady=8)
+
+        ttk.Label(controls, text="Highlight Path:").grid(row=8, column=0, columnspan=2, sticky="w")
+        self.path_start = ttk.Entry(controls)
+        self.path_start.grid(row=9, column=0, sticky="ew", pady=(0, 4))
+        self.path_end = ttk.Entry(controls)
+        self.path_end.grid(row=9, column=1, sticky="ew", pady=(0, 4))
+        ttk.Button(controls, text="Find Path", command=self.find_and_highlight_path).grid(row=10, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
         self.status_var = tk.StringVar(value="Add a few nodes to begin.")
-        tk.Label(root, textvariable=self.status_var, anchor="w").grid(row=4, column=0, columnspan=4, sticky="we", padx=10, pady=5)
+        status = ttk.Label(main, textvariable=self.status_var, anchor="w", padding=(12, 8), relief=tk.FLAT)
+        status.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(12, 0))
 
         self._recalculate_positions()
 
@@ -177,7 +208,13 @@ class NodeSimulatorApp:
     def _recalculate_positions(self) -> None:
         """Recompute layout for all nodes to keep spacing even."""
 
-        self.positions = compute_radial_layout(self.group.list_nodes())
+        self.positions = compute_radial_layout(
+            self.group.list_nodes(),
+            center=self.canvas_center,
+            min_radius=120,
+            ring_step=110,
+            min_spacing=90,
+        )
 
     def redraw(self) -> None:
         self.canvas.delete("all")
@@ -208,10 +245,10 @@ class NodeSimulatorApp:
         x, y = self.positions.get(node_id, (50, 50))
         radius = 18
         standalone = node_id in self.group.get_standalone_nodes()
-        color = "#f5f5f5" if standalone else "#ffffff"
-        outline = "#4caf50" if node_id in self.highlight_path else "#333"
+        color = "#eef5ff" if node_id in self.highlight_path else ("#f7f7f7" if standalone else "#ffffff")
+        outline = "#2563eb" if node_id in self.highlight_path else "#4b5563"
         self.canvas.create_oval(x - radius, y - radius, x + radius, y + radius, fill=color, outline=outline, width=2)
-        self.canvas.create_text(x, y, text=node_id)
+        self.canvas.create_text(x, y, text=node_id, font=("Segoe UI", 10, "bold"), fill="#111827")
 
 
 def main() -> None:
