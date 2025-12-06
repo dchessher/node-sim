@@ -43,6 +43,27 @@ def compute_radial_position(
     return x, y
 
 
+def compute_radial_layout(
+    node_ids: List[str],
+    *,
+    center: Tuple[int, int] = (360, 260),
+    radius: int = 200,
+) -> Dict[str, Tuple[int, int]]:
+    """Return a full layout mapping for the provided nodes.
+
+    This recalculates positions for all nodes whenever the total changes so that
+    spacing is updated as the graph grows.
+    """
+
+    total = len(node_ids)
+    return {
+        node_id: compute_radial_position(
+            index=index, total=total, center=center, radius=radius
+        )
+        for index, node_id in enumerate(node_ids)
+    }
+
+
 class NodeSimulatorApp:
     """Tkinter-based visual demo for the node simulation."""
 
@@ -80,6 +101,8 @@ class NodeSimulatorApp:
         self.status_var = tk.StringVar(value="Add a few nodes to begin.")
         tk.Label(root, textvariable=self.status_var, anchor="w").grid(row=4, column=0, columnspan=4, sticky="we", padx=10, pady=5)
 
+        self._recalculate_positions()
+
     def add_node(self) -> None:
         node_id = self.node_entry.get().strip()
         if not node_id:
@@ -87,8 +110,7 @@ class NodeSimulatorApp:
             return
         try:
             self.group.add_node(node_id)
-            total_nodes = len(self.positions) + 1
-            self.positions[node_id] = self._next_position(len(self.positions), total_nodes)
+            self._recalculate_positions()
             self.status_var.set(f"Added node {node_id}.")
         except ValueError as exc:
             self.status_var.set(str(exc))
@@ -127,15 +149,10 @@ class NodeSimulatorApp:
             self.status_var.set("No path found (or nodes missing).")
         self.redraw()
 
-    def _next_position(self, index: int, total: int) -> Tuple[int, int]:
-        """Return a visually spaced position for the next node.
+    def _recalculate_positions(self) -> None:
+        """Recompute layout for all nodes to keep spacing even."""
 
-        The first node is placed at the center. Subsequent nodes are evenly
-        distributed around a circle to avoid overlapping positions when more
-        nodes are added.
-        """
-
-        return compute_radial_position(index=index, total=total)
+        self.positions = compute_radial_layout(self.group.list_nodes())
 
     def redraw(self) -> None:
         self.canvas.delete("all")
