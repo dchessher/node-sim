@@ -8,6 +8,41 @@ from nodes import NodeGroup
 from traversal import shortest_path
 
 
+def compute_radial_position(
+    index: int,
+    total: int,
+    *,
+    center: Tuple[int, int] = (360, 260),
+    radius: int = 200,
+) -> Tuple[int, int]:
+    """Compute a visually distinct position for a node.
+
+    Args:
+        index: Zero-based position of the node being placed.
+        total: Total number of nodes to position in the view.
+        center: Canvas center point.
+        radius: Distance from the center for ring placements.
+
+    Returns:
+        Tuple of ``(x, y)`` coordinates.
+    """
+
+    if total <= 0:
+        raise ValueError("Total number of nodes must be positive.")
+    if index < 0 or index >= total:
+        raise ValueError("Index must be within the total count of nodes.")
+
+    center_x, center_y = center
+    if total == 1 or index == 0:
+        return center_x, center_y
+
+    ring_count = total - 1
+    angle = (2 * math.pi / ring_count) * (index - 1)
+    x = center_x + int(radius * math.cos(angle))
+    y = center_y + int(radius * math.sin(angle))
+    return x, y
+
+
 class NodeSimulatorApp:
     """Tkinter-based visual demo for the node simulation."""
 
@@ -52,7 +87,8 @@ class NodeSimulatorApp:
             return
         try:
             self.group.add_node(node_id)
-            self.positions[node_id] = self._next_position(len(self.positions))
+            total_nodes = len(self.positions) + 1
+            self.positions[node_id] = self._next_position(len(self.positions), total_nodes)
             self.status_var.set(f"Added node {node_id}.")
         except ValueError as exc:
             self.status_var.set(str(exc))
@@ -91,15 +127,15 @@ class NodeSimulatorApp:
             self.status_var.set("No path found (or nodes missing).")
         self.redraw()
 
-    def _next_position(self, index: int) -> Tuple[int, int]:
-        radius = 200
-        center_x, center_y = 360, 260
-        if index == 0:
-            return center_x, center_y
-        angle = (2 * math.pi / max(1, len(self.positions))) * index
-        x = center_x + int(radius * math.cos(angle))
-        y = center_y + int(radius * math.sin(angle))
-        return x, y
+    def _next_position(self, index: int, total: int) -> Tuple[int, int]:
+        """Return a visually spaced position for the next node.
+
+        The first node is placed at the center. Subsequent nodes are evenly
+        distributed around a circle to avoid overlapping positions when more
+        nodes are added.
+        """
+
+        return compute_radial_position(index=index, total=total)
 
     def redraw(self) -> None:
         self.canvas.delete("all")
